@@ -93,13 +93,16 @@ class QBImagePickerControllerDelegateImpl extends NSObject implements QBImagePic
     requestOptions.synchronous = false;
     requestOptions.deliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat;
     requestOptions.normalizedCropRect = CGRectMake(0, 0, 1, 1);
+    requestOptions.version = PHImageRequestOptionsVersion.Original;
+    requestOptions.networkAccessAllowed = true;
+
     let cnt = 0;
 
     const next = function() {
       cnt++;
       if (cnt === assets.count) {
         this._callback(selection);
-        // this._owner.get().closePicker();
+        this._owner.get().closePicker();
       } else {
         requestImg(cnt);
       }
@@ -126,31 +129,43 @@ class QBImagePickerControllerDelegateImpl extends NSObject implements QBImagePic
           }
         );
       } else if (asset.mediaType == PHAssetMediaType.Video) {
-        manager.requestAVAssetForVideoOptionsResultHandler(asset, null, (videoAsset: AVAsset, audioMix, info) => {
-          if (videoAsset.isKindOfClass(AVURLAsset.class())) {
-            const docsPath = fs.knownFolders.documents();
+        let requestOptions = PHVideoRequestOptions.alloc().init();
+        requestOptions.version = PHVideoRequestOptionsVersion.Original;
+        requestOptions.networkAccessAllowed = true;
 
-            const pathParts = (<AVURLAsset>videoAsset).URL.toString().split(fs.path.separator);
-            const filename = pathParts[pathParts.length - 1];
-            const localFilePath = fs.path.join(docsPath.path, 'camera-plus-videos', filename);
+        manager.requestAVAssetForVideoOptionsResultHandler(
+          asset,
+          requestOptions,
+          (videoAsset: AVAsset, audioMix, info) => {
+            if (videoAsset.isKindOfClass(AVURLAsset.class())) {
+              const docsPath = fs.knownFolders.documents();
 
-            let targetURL = NSURL.fileURLWithPath(localFilePath);
+              const pathParts = (<AVURLAsset>videoAsset).URL.toString().split(fs.path.separator);
+              const filename = pathParts[pathParts.length - 1];
+              const localFilePath = fs.path.join(docsPath.path, 'camera-plus-videos', filename);
 
-            if (fs.File.exists(localFilePath)) {
-              docsPath.getFile('camera-plus-videos/' + filename).remove();
+              const targetURL = NSURL.fileURLWithPath(localFilePath);
+
+              if (fs.File.exists(localFilePath)) {
+                docsPath.getFile('camera-plus-videos/' + filename).remove();
+              } else {
+                // make sure the folder exists, or else copyItemAtURLToURLError
+                // will bitch about it
+                docsPath.getFolder('camera-plus-videos');
+              }
+
+              const result = NSFileManager.defaultManager.copyItemAtURLToURLError(
+                (<AVURLAsset>videoAsset).URL,
+                targetURL
+              );
+
+              if (result) {
+                selection.push(localFilePath);
+              }
             }
-
-            const result = NSFileManager.defaultManager.copyItemAtURLToURLError(
-              (<AVURLAsset>videoAsset).URL,
-              targetURL
-            );
-
-            if (result) {
-              selection.push(localFilePath);
-            }
+            next.call(this);
           }
-          next.call(this);
-        });
+        );
       }
     };
     requestImg(0);
