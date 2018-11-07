@@ -260,6 +260,7 @@ export class MySwifty extends SwiftyCamViewController {
   private _flashBtn: UIButton;
   private _pickerDelegate: any;
   private _resized: boolean;
+  private _viewController: UIViewController;
 
   public static initWithOwner(owner: WeakRef<CameraPlus>, defaultCamera: CameraTypes = 'rear') {
     CLog('MySwifty initWithOwner');
@@ -499,13 +500,19 @@ export class MySwifty extends SwiftyCamViewController {
     return UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.Camera);
   }
 
-  public getParentViewController() {
+  public getParentViewController(force?: boolean) {
+    if (this._viewController && !force) {
+      return this._viewController;
+    }
+
     var responder: UIResponder = this.view;
     do {
       responder = responder.nextResponder;
     } while (responder && !(NSStringFromClass(responder.class()) === 'UIViewControllerImpl'));
 
-    return <UIViewController>responder;
+    this._viewController = <UIViewController>responder;
+
+    return this._viewController;
   }
 
   public chooseFromLibrary(options?: IChooseOptions): Promise<any> {
@@ -572,7 +579,7 @@ export class MySwifty extends SwiftyCamViewController {
 
       imagePickerController.mediaType = mediaType;
 
-      this.getParentViewController().presentViewControllerAnimatedCompletion(imagePickerController, true, null);
+      this.getParentViewController(true).presentViewControllerAnimatedCompletion(imagePickerController, true, null);
     });
   }
 
