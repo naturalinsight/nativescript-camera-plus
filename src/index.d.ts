@@ -1,4 +1,3 @@
-import { EventData } from 'tns-core-modules/data/observable';
 import { ContentView } from 'tns-core-modules/ui/content-view';
 
 export declare class CameraPlus extends ContentView {
@@ -56,12 +55,12 @@ export declare class CameraPlus extends ContentView {
   /**
    * String value when hooking into the confirmScreenShownEvent. This event fires when the confirm dialog is shown.
    */
-  public static confirmScreenShownEvent = 'confirmScreenShownEvent';
+  public static confirmScreenShownEvent: 'confirmScreenShownEvent';
 
   /**
    * String value when hooking into the confirmScreenDismissedEvent. This event fires when the confirm dialog is dismissed either by Retake or Save.
    */
-  public static confirmScreenDismissedEvent = 'confirmScreenDismissedEvent';
+  public static confirmScreenDismissedEvent: 'confirmScreenDismissedEvent';
 
   /**
    * If true console logs will be output to help debug the Camera Plus events.
@@ -167,7 +166,7 @@ export declare class CameraPlus extends ContentView {
    * Start recording video
    * @param options IVideoOptions
    */
-  record(options?: IVideoOptions): void;
+  record(options?: IVideoOptions): Promise<void>;
 
   /**
    * Stop recording video.
@@ -253,18 +252,32 @@ export interface ICameraOptions {
   confirmSaveText?: string;
 }
 
+export declare enum CameraVideoQuality {
+  MAX_480P = '480p',
+  MAX_720P = '720p',
+  MAX_1080P = '1080p',
+  MAX_2160P = '2160p',
+  HIGHEST = 'highest',
+  LOWEST = 'lowest',
+  QVGA = 'qvga'
+}
 export interface IVideoOptions {
+  quality?: CameraVideoQuality;
   confirm?: boolean;
   saveToGallery?: boolean;
   height?: number;
   width?: number;
+  disableHEVC?: boolean;
+  androidMaxVideoBitRate?: number;
+  androidMaxFrameRate?: number;
+  androidMaxAudioBitRate?: number;
 }
 
 export interface IChooseOptions {
   width?: number;
   height?: number;
   keepAspectRatio?: boolean;
-  showImages?:  boolean;
+  showImages?: boolean;
   showVideos?: boolean;
 }
 
